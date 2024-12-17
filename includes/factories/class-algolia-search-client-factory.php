@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Algolia_Search_Client_Factory class file.
  *
@@ -16,7 +17,8 @@ use WebDevStudios\WPSWA\Algolia\AlgoliaSearch\Support\UserAgent;
  *
  * @since 1.6.0
  */
-class Algolia_Search_Client_Factory {
+class Algolia_Search_Client_Factory
+{
 
 	/**
 	 * Create an Algolia SearchClient.
@@ -29,7 +31,8 @@ class Algolia_Search_Client_Factory {
 	 *
 	 * @return SearchClient
 	 */
-	public static function create( string $app_id, string $api_key ): SearchClient {
+	public static function create(string $app_id, string $api_key): SearchClient
+	{
 
 		$integration_name = (string) apply_filters(
 			'algolia_ua_integration_name',
@@ -55,7 +58,7 @@ class Algolia_Search_Client_Factory {
 
 		$http_client = Algolia_Http_Client_Interface_Factory::create();
 
-		Algolia::setHttpClient( $http_client );
+		Algolia::setHttpClient($http_client);
 
 		/**
 		 * Allows for providing custom configuration arguments for Algolia Search Client.
@@ -70,19 +73,38 @@ class Algolia_Search_Client_Factory {
 			[]
 		);
 
-		if ( ! empty( $custom_config ) && is_array( $custom_config ) ) {
-			$config = SearchConfig::create( $app_id, $api_key );
+		if ((! empty($custom_config) && is_array($custom_config)) || (defined('WP_PROXY_HOST') && defined('WP_PROXY_PORT'))) {
+			/*if (defined('WP_PROXY_HOST') && defined('WP_PROXY_PORT')) {
+				$config = new SearchConfig([
+					'appId' => $app_id,
+					'apiKey' => $api_key,
+					'hosts' => [WP_PROXY_HOST . ':' . WP_PROXY_PORT]
+				]);
+			} else {
+				
+			}*/
 
-			if ( ! empty( $custom_config['connectTimeout'] ) ) {
-				$config->setConnectTimeout( (int) $custom_config['connectTimeout'] );
+			$config = SearchConfig::create($app_id, $api_key);
+
+			if (defined('WP_PROXY_HOST') && defined('WP_PROXY_PORT')) {
+				$proxy_config = 'http://'  . WP_PROXY_HOST . ':' . WP_PROXY_PORT;
+
+				echo $proxy_config
+
+				putenv('HTTP_PROXY=' . $proxy_config);
+				putenv('HTTPS_PROXY=' . $proxy_config);
 			}
-			if ( ! empty( $custom_config['readTimeout'] ) ) {
-				$config->setReadTimeout( (int) $custom_config['readTimeout'] );
+
+			if (! empty($custom_config['connectTimeout'])) {
+				$config->setConnectTimeout((int) $custom_config['connectTimeout']);
 			}
-			if ( ! empty( $custom_config['writeTimeout'] ) ) {
-				$config->setWriteTimeout( (int) $custom_config['writeTimeout'] );
+			if (! empty($custom_config['readTimeout'])) {
+				$config->setReadTimeout((int) $custom_config['readTimeout']);
 			}
-			return SearchClient::createWithConfig( $config );
+			if (! empty($custom_config['writeTimeout'])) {
+				$config->setWriteTimeout((int) $custom_config['writeTimeout']);
+			}
+			return SearchClient::createWithConfig($config);
 		}
 
 		return SearchClient::create(
